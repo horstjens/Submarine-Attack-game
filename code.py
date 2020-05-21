@@ -13,7 +13,7 @@ class Torpedo(arcade.Sprite):
         super().__init__(os.path.join("images", "laserRed16.png"), 1.0)
         self.center_x = MyGame.player.center_x
         self.center_y = MyGame.player.center_y
-        self.change_x = 50
+        self.change_x = 5w
         MyGame.torpedo_list.append(self)
 
     def update(self):
@@ -152,8 +152,8 @@ class Block(arcade.SpriteSolidColor):
     gravity = 0.098
     acceleration = 0.801
     
-    def __init__(self, x,y):
-        super().__init__(5,5,arcade.color.RED)
+    def __init__(self, x,y, color=arcade.color.RED):
+        super().__init__(5,5, color)
         self.center_x, self.center_y = x,y
         MyGame.block_list.append(self)
         self.age = 0
@@ -398,7 +398,7 @@ class MyGame(arcade.Window):
 
         if random.random() < 0.01: # TODO 60% Wurm Pro sekunde
             Worm()
-        if random.random() < 0.001: # TODO 60% Wurm Pro sekunde
+        if random.random() < 0.01: # TODO 60% Wurm Pro sekunde
             Tower()
         if random.random() < 0.004: # TODO 60% Wurm Pro sekunde
             Plant()
@@ -422,8 +422,11 @@ class MyGame(arcade.Window):
                     continue
                 else:
                     crashworm.hitpoints -= 1
+                    for i in range(5):
+                        Block(crashworm.left, torpedo.center_y, arcade.color.GREEN)
                     torpedo.kill()
                     self.score += 1
+                    
 
 
 
