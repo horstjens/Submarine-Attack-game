@@ -7,13 +7,30 @@ import os
 import math
 
 
+class SeaMine(arcade.Sprite):
+
+    def __init__(self, x):
+        super().__init__(os.path.join("images", "rg1024_cartoon_sea_mine.png"), 0.1)
+        self.center_x = x
+        self.center_y = 75
+        self.change_x = -0.5
+        self.change_y = random.random() *0.5 +0.01
+        MyGame.mine_list.append(self)
+
+    def update(self):
+        super().update()
+
+        if self.right < 0 or self.bottom > MyGame.screenheight:
+            self.remove_from_sprite_lists()
+
+
 class Torpedo(arcade.Sprite):
 
     def __init__(self):
         super().__init__(os.path.join("images", "laserRed16.png"), 1.0)
         self.center_x = MyGame.player.center_x
         self.center_y = MyGame.player.center_y
-        self.change_x = 5w
+        self.change_x = 5
         MyGame.torpedo_list.append(self)
 
     def update(self):
@@ -151,7 +168,7 @@ class Plant(arcade.Sprite):
 class Block(arcade.SpriteSolidColor):
     gravity = 0.098
     acceleration = 0.801
-    
+
     def __init__(self, x,y, color=arcade.color.RED):
         super().__init__(5,5, color)
         self.center_x, self.center_y = x,y
@@ -160,7 +177,7 @@ class Block(arcade.SpriteSolidColor):
         self.max_age = 1.0 + random.random()*1.5
         self.change_x = random.random()*30 -15
         self.change_y = random.random()*30 -15
-        
+
     def on_update(self, delta_time: float = 1/60):
         self.age += delta_time
         # ------ gravity------
@@ -194,6 +211,9 @@ class Tower(arcade.Sprite):
         #i = int(self.age  / self.animation_interval) % 2 # because we have 2 images in the animation
         #self.texture = (MyGame.textures["worm1"], MyGame.textures["worm2"])[i]
         #print("age", self.age, i)
+
+        if random.random() < 0.001:
+            SeaMine(self.center_x)
 
         super().update()
         super().on_update(delta_time)
@@ -266,7 +286,7 @@ class MyGame(arcade.Window):
         MyGame.textures["worm2"] = arcade.load_texture(os.path.join("images", "wormGreen_move.png"))
         MyGame.textures["deadworm"] = arcade.load_texture(os.path.join("images", "deadworm.png"), flipped = True)
         MyGame.textures["plant1"] = arcade.load_texture(os.path.join("images", "pflanze2.png"))
-        MyGame.textures["plant2"] = arcade.load_texture(os.path.join("images", "pflanze3.png")) 
+        MyGame.textures["plant2"] = arcade.load_texture(os.path.join("images", "pflanze3.png"))
         MyGame.textures["plant3"] = arcade.load_texture(os.path.join("images", "pflanze3.png"),mirrored = True)
         MyGame.textures["plant4"] = arcade.load_texture(os.path.join("images", "pflanze2.png"),mirrored = True)
         #Worm.textures = [arcade.load_texture(os.path.join("images", "wormGreen.png")),
@@ -288,6 +308,7 @@ class MyGame(arcade.Window):
         #MyGame.coin_list = arcade.SpriteList()
         MyGame.bubble_list = arcade.SpriteList()
         MyGame.torpedo_list = arcade.SpriteList()
+        MyGame.mine_list = arcade.SpriteList()
         MyGame.plant_list = arcade.SpriteList()
         MyGame.block_list = arcade.SpriteList()
 
@@ -329,6 +350,7 @@ class MyGame(arcade.Window):
         self.plant_list.draw()
         self.player_list.draw()
         self.bubble_list.draw()
+        self.mine_list.draw()
         self.torpedo_list.draw()
         self.enemy_list.draw()
         self.block_list.draw()
@@ -364,7 +386,7 @@ class MyGame(arcade.Window):
             self.player.change_x -= 10
         if symbol == arcade.key.D: # or symbol == arcade.key.RIGHT:
             self.player.change_x += 10
-            
+
         if symbol == arcade.key.B: # or symbol == arcade.key.RIGHT:
             for x in range(20):
                 Block(x=self.player.center_x + 100, y=self.player.center_y)
@@ -387,9 +409,11 @@ class MyGame(arcade.Window):
         """ Movement and game logic """
 
 
-        self.bubble_list.on_update(delta_time)
+
         self.torpedo_list.update()
+        self.mine_list.update()
         self.player_list.update()
+        self.bubble_list.on_update(delta_time)
         self.enemy_list.on_update(delta_time)
         self.plant_list.on_update(delta_time)
         self.block_list.on_update(delta_time)
@@ -403,6 +427,16 @@ class MyGame(arcade.Window):
         if random.random() < 0.004: # TODO 60% Wurm Pro sekunde
             Plant()
             #print("Worm created")
+
+        hit_list = arcade.check_for_collision_with_list(self.player, self.mine_list)
+
+        for crashmine in hit_list:
+            if crashmine.hitpoints <= 0:
+                continue
+            else:
+                crashmine.kill()
+                self.player.hitpoints -= random.randint(25, 50)
+
         # Generate a list of all sprites that collided with the player.
         hit_list = arcade.check_for_collision_with_list(self.player,self.enemy_list)
 
@@ -426,7 +460,7 @@ class MyGame(arcade.Window):
                         Block(crashworm.left, torpedo.center_y, arcade.color.GREEN)
                     torpedo.kill()
                     self.score += 1
-                    
+
 
 
 
