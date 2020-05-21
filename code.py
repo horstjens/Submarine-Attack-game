@@ -14,7 +14,8 @@ class SeaMine(arcade.Sprite):
         self.center_x = x
         self.center_y = 75
         self.change_x = -0.5
-        self.change_y = random.random() *0.5 +0.01
+        self.hitpoints = 10
+        self.change_y = random.random() *1.75 +0.01
         MyGame.mine_list.append(self)
 
     def update(self):
@@ -196,7 +197,7 @@ class Tower(arcade.Sprite):
         super().__init__(os.path.join("images", "tower.png"), 0.3)
         #self.texture = MyGame.textures["worm1"]
         self.center_x = MyGame.screenwidth + random.randint(100,200)
-        self.center_y = 75
+        self.center_y = 65
         self.change_x = -0.5
         self.age = 0
         self.i = 0
@@ -212,7 +213,7 @@ class Tower(arcade.Sprite):
         #self.texture = (MyGame.textures["worm1"], MyGame.textures["worm2"])[i]
         #print("age", self.age, i)
 
-        if random.random() < 0.001:
+        if random.random() < 0.0005:
             SeaMine(self.center_x)
 
         super().update()
@@ -460,6 +461,18 @@ class MyGame(arcade.Window):
                         Block(crashworm.left, torpedo.center_y, arcade.color.GREEN)
                     torpedo.kill()
                     self.score += 1
+
+        for torpedo in self.torpedo_list:
+            hit_list = arcade.check_for_collision_with_list(torpedo, self.mine_list)
+
+            for crashmine in hit_list:
+                if crashmine.hitpoints <= 0:
+                    continue
+                else:
+                    crashmine.hitpoints -= 1
+                    torpedo.kill()
+                    if crashmine.hitpoints < 1:
+                        crashmine.kill()
 
 
 
