@@ -6,6 +6,36 @@ import arcade
 import os
 import math
 
+class Boss(arcade.Sprite):
+
+    def __init__(self):
+        super().__init__(filename=os.path.join("images", "EvilOctopus.png"), scale=0.1  )
+
+        self.center_x = MyGame.screenwidth*2
+        self.center_y = MyGame.screenheight//2
+        self.change_x = -0.5
+        self.hitpoints = 10
+        self.change_y = random.random() * 1.75 + 0.01
+        MyGame.boss_list.append(self)
+
+    def update(self):
+        super().update()
+
+        if self.right < MyGame.screenwidth * 0.9:
+            self.right = MyGame.screenwidth * 0.9
+            self.change_x = 0
+        self.change_y = random.choice((-2,-1.5,-1,-0.5,0,0,0,0.5,1,1.5,2))
+        if self.top > MyGame.screenheight:
+            self.top = MyGame.screenheight
+            self.change_y = -2
+        if self.bottom < 0:
+            self.bottom = 0
+            self.change_y = 2
+        if self.right < MyGame.screenwidth and random.random() < 0.01:
+            for a in range(0, 360, 15):
+                Seeker(self.center_x, self.center_y, a, 100,100)
+         #   self.remove_from_sprite_lists()
+
 
 class SeaMine(arcade.Sprite):
 
@@ -166,6 +196,31 @@ class Plant(arcade.Sprite):
         if self.right < 0:
             self.kill()
 
+class Seeker(arcade.SpriteSolidColor):
+
+    def __init__(self, x,y, grad, target_x, target_y,  color=arcade.color.YELLOW):
+        super().__init__(15,5, color)
+        self.center_x, self.center_y = x,y
+        MyGame.seeker_list.append(self)
+        self.age = 0
+        #self.max_age = 1.0 + random.random()*1.5
+
+        self.change_x = math.cos(grad)
+        self.change_y = math.sin(grad)
+
+    def on_update(self, delta_time: float = 1/60):
+        self.age += delta_time
+        # ------ gravity------
+        #self.change_y += self.gravity
+        #------ acceleration--------
+        #self.change_x *= self.acceleration
+        #self.change_y *= self.acceleration
+        #if self.age > self.max_age:
+        #    self.kill()
+        super().update()
+
+
+
 class Block(arcade.SpriteSolidColor):
     gravity = 0.098
     acceleration = 0.801
@@ -252,6 +307,7 @@ class MyGame(arcade.Window):
     screenheight = 0
     textures = {}
 
+
     def __init__(self, width, height, title):
         """ Initializer """
 
@@ -259,7 +315,7 @@ class MyGame(arcade.Window):
         super().__init__(width, height, title)
         MyGame.screenwidth = width
         MyGame.screenheight = height
-
+        self.boss = False
         # Set the working directory (where we expect to find files) to the same
         # directory this .py file is in. You can leave this out of your own
         # code, but it is needed to easily run the examples using "python -m"
@@ -312,6 +368,8 @@ class MyGame(arcade.Window):
         MyGame.mine_list = arcade.SpriteList()
         MyGame.plant_list = arcade.SpriteList()
         MyGame.block_list = arcade.SpriteList()
+        MyGame.boss_list = arcade.SpriteList()
+        MyGame.seeker_list = arcade.SpriteList()
 
         # Set up the player
         self.score = 0
@@ -354,7 +412,10 @@ class MyGame(arcade.Window):
         self.mine_list.draw()
         self.torpedo_list.draw()
         self.enemy_list.draw()
+        self.boss_list.draw()
+        self.seeker_list.draw()
         self.block_list.draw()
+
 
         # Render the text
         arcade.draw_text(f"Score: {self.score}", 10, 20, arcade.color.WHITE, 14)
@@ -412,19 +473,25 @@ class MyGame(arcade.Window):
 
 
         self.torpedo_list.update()
+        self.boss_list.update()
         self.mine_list.update()
         self.player_list.update()
         self.bubble_list.on_update(delta_time)
         self.enemy_list.on_update(delta_time)
         self.plant_list.on_update(delta_time)
         self.block_list.on_update(delta_time)
+        self.seeker_list.on_update(delta_time)
         # aging
+        if self.score == 10:
+            self.boss = True
+            Boss()
+            self.score += 50
 
-
-        if random.random() < 0.01: # TODO 60% Wurm Pro sekunde
-            Worm()
-        if random.random() < 0.01: # TODO 60% Wurm Pro sekunde
-            Tower()
+        if not self.boss:
+            if random.random() < 0.01: # TODO 60% Wurm Pro sekunde
+                Worm()
+            if random.random() < 0.01: # TODO 60% Wurm Pro sekunde
+                Tower()
         if random.random() < 0.004: # TODO 60% Wurm Pro sekunde
             Plant()
             #print("Worm created")
@@ -461,6 +528,7 @@ class MyGame(arcade.Window):
                         Block(crashworm.left, torpedo.center_y, arcade.color.GREEN)
                     torpedo.kill()
                     self.score += 1
+
 
         for torpedo in self.torpedo_list:
             hit_list = arcade.check_for_collision_with_list(torpedo, self.mine_list)
